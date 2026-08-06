@@ -203,6 +203,31 @@ Java_network_loki_messenger_libsession_1util_GroupKeysConfig_activeHashes(JNIEnv
     return jni_utils::jstring_list_from_collection(env, ptr->active_hashes());
 }
 extern "C"
+JNIEXPORT jobject JNICALL
+Java_network_loki_messenger_libsession_1util_GroupKeysConfig_activeKeyMessages(JNIEnv *env,
+                                                                              jobject thiz) {
+    return jni_utils::run_catching_cxx_exception_or_throws<jobject>(env, [=] {
+        auto map_class = jni_utils::JavaLocalRef(env, env->FindClass("java/util/HashMap"));
+        jmethodID map_constructor = env->GetMethodID(map_class.get(), "<init>", "()V");
+        jmethodID insert = env->GetMethodID(map_class.get(), "put",
+                                           "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+
+        auto new_map = env->NewObject(map_class.get(), map_constructor);
+
+        // The spans point into the Keys object's own storage and are invalidated by anything that
+        // modifies it, exactly as for pending_config(). Copying each one into a fresh jbyteArray here
+        // is what makes the Kotlin side safe to hold on to.
+        for (const auto& [hash, bytes] : ptrToKeys(env, thiz)->active_key_messages()) {
+            auto j_hash = jni_utils::JavaLocalRef(env, env->NewStringUTF(hash.c_str()));
+            auto j_bytes = util::bytes_from_span(env, bytes);
+            env->CallObjectMethod(new_map, insert, j_hash.get(), j_bytes.get());
+        }
+
+        return new_map;
+    });
+}
+
+extern "C"
 JNIEXPORT jbyteArray JNICALL
 Java_network_loki_messenger_libsession_1util_GroupKeysConfig_makeSubAccount(JNIEnv *env,
                                                                             jobject thiz,

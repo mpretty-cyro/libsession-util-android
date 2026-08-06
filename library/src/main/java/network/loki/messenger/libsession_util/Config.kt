@@ -276,6 +276,21 @@ interface ReadableGroupKeysConfig {
     fun supplementFor(userSessionIds: List<String>): ByteArray
     fun pendingConfig(): ByteArray?
     fun activeHashes(): List<String>
+
+    /**
+     * The raw bytes of the currently active keys messages, keyed by message hash — the same messages
+     * [activeHashes] names.
+     *
+     * Re-storing these bytes unchanged is what lets a NON-ADMIN repair a group whose keys have expired
+     * from the swarm: a keys message is signed by an admin and padded from the group secret key, so it
+     * cannot be regenerated, but bytes already held push back as-is and land on the same hash.
+     *
+     * Bytes are retained on LOAD, not on authorship, so a device that has just rekeyed holds nothing for
+     * the message it created until it loads that message back. Entries are absent for messages loaded
+     * before retention existed, and a missing entry means "cannot recover this one" rather than an error.
+     */
+    fun activeKeyMessages(): Map<String, ByteArray>
+
     fun encrypt(plaintext: ByteArray): ByteArray
     fun decrypt(ciphertext: ByteArray): Pair<ByteArray, String>?
     fun keys(): List<ByteArray>

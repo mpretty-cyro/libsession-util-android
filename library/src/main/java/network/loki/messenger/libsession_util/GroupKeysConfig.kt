@@ -67,6 +67,7 @@ class GroupKeysConfig private constructor(
 
     external override fun pendingConfig(): ByteArray?
     external override fun activeHashes(): List<String>
+    external override fun activeKeyMessages(): Map<String, ByteArray>
     external fun rekey(infoPtr: Long, membersPtr: Long): ByteArray
 
     external override fun encrypt(plaintext: ByteArray): ByteArray
