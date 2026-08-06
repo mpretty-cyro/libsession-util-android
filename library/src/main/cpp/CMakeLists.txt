@@ -120,6 +120,23 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         ${SOURCES})
 
+# A RAII wrapper with a real destructor but no assignment operators still gets an implicit
+# copy-assignment, so `lhs = f()` shallow-copies the handle and then lets the temporary's destructor
+# free it -- leaving lhs owning something already released. JavaLocalRef had exactly this shape and
+# it reached users as a dangling JNI local reference, surfacing far from the cause (a SIGSEGV inside
+# an unrelated Kotlin serializer). Nothing at runtime catches it; this does, at the call site.
+#
+# Deliberately the narrow -with-user-provided-dtor form rather than -Wdeprecated-copy-with-dtor:
+# every wrapper of this kind has a destructor with a body, while the broader flag also fires on
+# user-declared destructors in libsession-util's own headers, which we do not own.
+#
+# --system-header-prefix keeps it to code we own: the warning is a property of the whole translation
+# unit, and libsession-util's headers have their own instances (sodium_array.hpp) that are not ours
+# to change and are not this bug.
+target_compile_options(session_util PRIVATE
+        -Werror=deprecated-copy-with-user-provided-dtor
+        --system-header-prefix=session/)
+
 target_include_directories(session_util
         PRIVATE
             ${cgif_SOURCE_DIR}/inc
