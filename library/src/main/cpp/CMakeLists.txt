@@ -13,7 +13,9 @@ project("session_util")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_FLAGS -Wno-deprecated-declarations)
+# Append: a plain set() here replaces whatever the NDK toolchain put in CMAKE_CXX_FLAGS_INIT, and
+# does so before the add_subdirectory below, so libsession-util loses those flags as well.
+string(APPEND CMAKE_CXX_FLAGS " -Wno-deprecated-declarations")
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
